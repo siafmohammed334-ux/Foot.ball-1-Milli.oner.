@@ -22,8 +22,13 @@ jobs:
 
       - name: Prepare web files
         run: |
+          F=$(find . -name index.html -not -path './node_modules/*' -not -path './android/*' | head -n 1)
+          if [ -z "$F" ]; then echo "index.html not found"; exit 1; fi
+          DIR=$(dirname "$F")
+          echo "Using $DIR"
           rm -rf www
-          cp -r public www
+          mkdir www
+          rsync -a --exclude='www' --exclude='.git' --exclude='.github' --exclude='node_modules' "$DIR"/ www/
 
       - name: Install Capacitor
         run: |
