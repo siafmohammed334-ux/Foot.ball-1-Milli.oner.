@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
 
@@ -20,8 +20,6 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
-
       - name: Install Cordova
         run: npm install -g cordova
 
@@ -29,7 +27,7 @@ jobs:
         run: |
           cordova create build_app com.siaf.footballmillionaire FootballMillionaire
           rm -rf build_app/www/*
-          rsync -av --exclude='build_app' --exclude='.git' --exclude='.github' --exclude='config.xml' ./ build_app/www/
+          cp -r *.js *.html *.css *.png *.jpg *.json build_app/www/ 2>/dev/null || true
           cp config.xml build_app/config.xml
           cd build_app
           cordova platform add android
