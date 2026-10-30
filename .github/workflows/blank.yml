@@ -1,24 +1,30 @@
+
 name: Build APK
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-24.04
+
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Show files
         run: ls -la
 
-      - uses: actions/setup-node@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - uses: actions/setup-java@v5
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
@@ -28,15 +34,29 @@ jobs:
 
       - name: Create Cordova project
         run: |
-          cordova create build_app com.siaf.footballmillionaire FootballMillionaire
-          rm -rf build_app/www/*
-          cp -r *.js *.html *.css *.png *.jpg *.json build_app/www/ 2>/dev/null || true
-          cp config.xml build_app/config.xml
-          cd build_app
-          cordova platform add android
-          cordova build android --debug
+          cordova create build_app com.siaf.footballmillionaire "Football Millionaire"
 
-      - uses: actions/upload-artifact@v4
+      - name: Copy game files
+        run: |
+          mkdir -p build_app/www
+          find . -maxdepth 1 -mindepth 1 \
+            ! -name '.git' \
+            ! -name '.github' \
+            ! -name 'build_app' \
+            -exec cp -r {} build_app/www/ \;
+          test -f build_app/www/index.html
+
+      - name: Add Android platform
+        working-directory: build_app
+        run: cordova platform add android
+
+      - name: Build APK
+        working-directory: build_app
+        run: cordova build android --debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
-          name: app-debug
+          name: football-millionaire-apk
           path: build_app/platforms/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
