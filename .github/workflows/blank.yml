@@ -2,61 +2,40 @@ name: Build APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: '20'
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
 
-      - name: Prepare web files
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Cordova
+        run: npm install -g cordova
+
+      - name: Create Cordova project
         run: |
-          F=$(find . -name index.html -not -path './node_modules/*' -not -path './android/*' | head -n 1)
-          if [ -z "$F" ]; then echo "index.html not found"; exit 1; fi
-          DIR=$(dirname "$F")
-          echo "Using $DIR"
-          rm -rf www
-          mkdir www
-          rsync -a --exclude='www' --exclude='.git' --exclude='.github' --exclude='node_modules' "$DIR"/ www/
+          cordova create build_app com.siaf.footballmillionaire FootballMillionaire
+          rm -rf build_app/www/*
+          rsync -av --exclude='build_app' --exclude='.git' --exclude='.github' --exclude='config.xml' ./ build_app/www/
+          cp config.xml build_app/config.xml
+          cd build_app
+          cordova platform add android
+          cordova build android --debug
 
-      - name: Install Capacitor
-        run: |
-          npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-
-      - name: Create Android project
-        run: |
-          cat > capacitor.config.json <<'EOF'
-          {
-            "appId": "com.footballmillionaire.app",
-            "appName": "مليونير كرة القدم",
-            "webDir": "www",
-            "backgroundColor": "#030818",
-            "server": { "androidScheme": "https" }
-          }
-          EOF
-          npx cap add android
-          npx cap sync android
-
-      - name: Build debug APK
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: build_app/platforms/android/app/build/outputs/apk/debug/*.apk
