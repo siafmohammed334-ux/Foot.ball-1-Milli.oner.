@@ -1,4 +1,3 @@
-
 name: Build APK
 
 on:
@@ -14,9 +13,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Show files
-        run: ls -la
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -43,7 +39,12 @@ jobs:
             ! -name '.git' \
             ! -name '.github' \
             ! -name 'build_app' \
+            ! -name 'cordova.js' \
+            ! -name 'cordova_plugins.js' \
+            ! -name 'config.xml' \
             -exec cp -r {} build_app/www/ \;
+          cp config.xml build_app/config.xml
+          cp icon.png build_app/www/icon.png
           test -f build_app/www/index.html
 
       - name: Add Android platform
