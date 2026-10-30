@@ -11,6 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Show files
+        run: ls -la
+
       - uses: actions/setup-node@v5
         with:
           node-version: '20'
